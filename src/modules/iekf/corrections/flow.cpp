@@ -48,8 +48,16 @@ void IEKF::correctFlow(const optical_flow_s *msg)
 		return;
 	}
 
+	// compute agl
+	float agl = _x(X::asl) - _x(X::terrain_asl);
+
+	// return if too close to ground
+	if (agl < 0.2f) {
+		return;
+	}
+
 	// init global reference
-	if (!_origin.xyInitialized()) {
+	if (agl > 0.2f && !_origin.xyInitialized()) {
 		float lat_deg = 47.397742f;
 		float lon_deg = 8.545594f;
 		ROS_INFO("flow origin init lat: %12.6f deg lon: %12.6f deg",
@@ -64,7 +72,6 @@ void IEKF::correctFlow(const optical_flow_s *msg)
 
 	Vector3f omega_nb_b(
 		_u(U::omega_nb_bX), _u(U::omega_nb_bY), _u(U::omega_nb_bZ));
-	float agl = _x(X::asl) - _x(X::terrain_asl);
 
 	float vel_N = _x(X::vel_N);
 	float vel_E = _x(X::vel_E);
@@ -153,6 +160,13 @@ void IEKF::correctFlow(const optical_flow_s *msg)
 	_sensorFlow.kalmanCorrectCond(_P, H, R, r, dxe, dP);
 
 	if (_sensorFlow.shouldCorrect()) {
+		// only correct velocity
+		for (int i = 0; i < Xe::n; i++) {
+			if (i != Xe::vel_N && i != Xe::vel_D) {
+				dxe(i) = 0;
+			}
+		}
+
 		setX(applyErrorCorrection(dxe));
 		setP(_P + dP);
 	}

@@ -248,7 +248,7 @@ void IEKF::callbackImu(const sensor_combined_s *msg)
 		// correct  if new data
 		correctAccel(msg);
 
-		//correctMag(msg);
+		correctMag(msg);
 
 		correctBaro(msg);
 

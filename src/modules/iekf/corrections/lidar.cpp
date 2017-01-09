@@ -86,6 +86,13 @@ void IEKF::correctLidar(const distance_sensor_s *msg)
 	_sensorLidar.kalmanCorrectCond(_P, H, R, r, dxe, dP);
 
 	if (_sensorLidar.shouldCorrect()) {
+		// only correct altitude states
+		for (int i = 0; i < Xe::n; i++) {
+			if (i != Xe::vel_D && i != Xe::asl && i != Xe::terrain_asl) {
+				dxe(i) = 0;
+			}
+		}
+
 		setX(applyErrorCorrection(dxe));
 		setP(_P + dP);
 	}

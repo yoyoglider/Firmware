@@ -81,34 +81,13 @@ void IEKF::correctMag(const sensor_combined_s *msg)
 	Vector<float, X::n> x = applyErrorCorrection(dxe);
 
 	if (_sensorMag.shouldCorrect()) {
-		setX(x);
-		setP(_P + dP);
-	}
-
-	Vector3f y2 = Quatf(x(X::q_nb_0), x(X::q_nb_1),
-			    x(X::q_nb_2), x(X::q_nb_3)).conjugate(y_b);
-	Vector2f r2(y2(0) - yh(0), y2(1) - yh(1));
-
-	if (!_sensorMag.shouldCorrect() || r2.norm() - r.norm() > 1e-2f) {
-		ROS_INFO("mag non-linear correction used");
-		Vector3f rot(dxe(Xe::rot_N), dxe(Xe::rot_E), dxe(Xe::rot_D));
-		Vector3f y_xy = Vector3f(y(0), y(1), 0);
-		Vector3f yh_xy = Vector3f(yh(0), yh(1), 0);
-		float angle = rot.norm();
-		float angle_max = 0.1f * acosf(y_xy.dot(yh_xy)) / y_xy.norm() / yh_xy.norm();
-
-		if (angle > angle_max) {
-			angle = angle_max;
+		// only correct heading
+		for (int i = 0; i < Xe::n; i++) {
+			if (i != Xe::rot_D) {
+				dxe(i) = 0;
+			}
 		}
 
-		Vector3f axis = y_xy.cross(yh_xy).unit();
-		dxe.setZero();
-		dxe(Xe::rot_D) = axis(2) * angle;
-		x = applyErrorCorrection(dxe);
-		setX(x);
-		// don't update P, linearization is poor
-
-	} else {
 		setX(x);
 		setP(_P + dP);
 	}

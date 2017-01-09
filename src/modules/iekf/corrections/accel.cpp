@@ -85,31 +85,15 @@ void IEKF::correctAccel(const sensor_combined_s *msg)
 	_sensorAccel.kalmanCorrectCond(_P, H, R, r, dxe, dP);
 	Vector<float, X::n> x = applyErrorCorrection(dxe);
 
-	Quatf q_nb2(x(X::q_nb_0), x(X::q_nb_1),
-		    x(X::q_nb_2), x(X::q_nb_3));
-	Vector3f r2 = q_nb2.conjugate(y_b / x(X::accel_scale)) - _g_n;
-
-	if (!_sensorAccel.shouldCorrect() || r2.norm() - r.norm() > 1e-2f) {
-		ROS_INFO("accel non-linear correction used");
-		Vector3f rot(dxe(Xe::rot_N), dxe(Xe::rot_E), dxe(Xe::rot_D));
-		float angle = rot.norm();
-		float angle_max = 0.1f * acosf(y_g_n.dot(_g_n)) / y_g_n.norm() / _g_n.norm();
-
-		if (angle > angle_max) {
-			angle = angle_max;
+	if (_sensorAccel.shouldCorrect()) {
+		// only correct roll/pitch
+		for (int i = 0; i < Xe::n; i++) {
+			if (i != Xe::rot_N && i != Xe::rot_E) {
+				dxe(i) = 0;
+			}
 		}
 
-		Vector3f axis = y_g_n.cross(_g_n).unit();
-		dxe.setZero();
-		dxe(Xe::rot_N) = axis(0) * angle;
-		dxe(Xe::rot_E) = axis(1) * angle;
-		dxe(Xe::rot_D) = axis(2) * angle;
-		x = applyErrorCorrection(dxe);
-		setX(x);
-		// don't update P, linearization is poor
-
-	} else {
-		setX(x);
+		setX(applyErrorCorrection(dxe));
 		setP(_P + dP);
 	}
 }

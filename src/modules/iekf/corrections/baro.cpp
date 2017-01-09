@@ -82,6 +82,13 @@ void IEKF::correctBaro(const sensor_combined_s *msg)
 	_sensorBaro.kalmanCorrectCond(_P, H, R, r, dxe, dP);
 
 	if (_sensorBaro.shouldCorrect()) {
+		// only correct asl and baro bias
+		for (int i = 0; i < Xe::n; i++) {
+			if (i != Xe::asl && i != Xe::baro_bias) {
+				dxe(i) = 0;
+			}
+		}
+
 		setX(applyErrorCorrection(dxe));
 		setP(_P + dP);
 	}
