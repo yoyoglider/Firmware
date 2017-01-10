@@ -20,7 +20,7 @@
 namespace ros
 {
 
-HashMap<const char *, const struct orb_metadata *> _hmap;
+HashMap<const char *, const struct orb_metadata *, 128> _hmap;
 
 Time::Time() : _nsec(0)
 {

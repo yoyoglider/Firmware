@@ -3,7 +3,7 @@
 #include <px4_posix.h>
 #include "uORB/Subscription.hpp"
 #include "uORB/Publication.hpp"
-#include "hash/HashMap.h"
+#include "HashMap/hashmap/HashMap.h"
 
 ///
 // ROS to uORB API translator
